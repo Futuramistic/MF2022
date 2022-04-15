@@ -1,9 +1,7 @@
-from graph_cut import GraphCut
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
-import scipy.stats as stats
-from tqdm import TqdmSynchronisationWarning, tqdm
+from tqdm import tqdm
 
 def normal(x,mean,sigma):
     return ( 2.*np.pi*sigma**2. )**-0.5 * np.exp( -0.5 * (x-mean)**2. / sigma**2. )

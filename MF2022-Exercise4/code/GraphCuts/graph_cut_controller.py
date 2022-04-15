@@ -1,7 +1,6 @@
 import numpy as np
 import scipy.ndimage as ndimage
 import matplotlib.pyplot as plt
-from scipy.sparse import coo_matrix
 from tkinter import *
 from PIL import Image
 from tqdm import tqdm
