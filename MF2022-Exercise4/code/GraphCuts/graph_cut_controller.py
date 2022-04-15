@@ -186,7 +186,6 @@ class GraphCutController:
         # TODO: TASK 2.1 - get the color histogram for the unaries
         hist_res = 32
         # As sanity check, change image to RGB from possible RGBA
-        image_array=self.__ToRGBImage(image_array)
         cost_fg = self.__get_color_histogram(image_array, seed_fg, hist_res)
         cost_bg = self.__get_color_histogram(image_array, seed_bg, hist_res)
 
