@@ -210,4 +210,6 @@ class GraphCutController:
         if segmented_image_with_background is not None:
             segmented_image_with_background = Image.fromarray(segmented_image_with_background, 'RGB')
             plt.imshow(segmented_image_with_background)
+            plt.axis('off')
+            plt.tight_layout()
             plt.show()

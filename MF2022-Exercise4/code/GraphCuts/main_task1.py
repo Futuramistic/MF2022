@@ -24,15 +24,15 @@ def task1_1():
     gauss1 = np.array(sorted(gauss1,key=lambda row: row[0]))
     gauss2 = np.array(sorted(gauss2,key=lambda row: row[0]))
 
-    wassertain = round((1./n)*np.sum(np.linalg.norm(gauss1-gauss2, axis=0)**2),2)
+    wasserstein = round((1./n)*np.sum(np.linalg.norm(gauss1-gauss2, axis=0)**2),2)
     m1 = np.array([mu1])
     m2 = np.array([mu2])
     closed_form = np.linalg.norm(m1-m2)**2 + (sigma1**2+sigma2**2-2*sigma2*sigma1)
 
-    print(f"Closed-form Wassertain distance:    {closed_form}")
-    print(f'Computed Wassertain distance:       {wassertain}')
-    print(f'Deviation from actual:              {round(np.abs(wassertain-closed_form),2)}')
-    print(f'Percentage of deviation:            {round(100*(np.abs(wassertain-closed_form)/closed_form),2)}')
+    print(f"Closed-form Wasserstein distance:    {closed_form}")
+    print(f'Computed Wasserstein distance:       {wasserstein}')
+    print(f'Deviation from actual:              {round(np.abs(wasserstein-closed_form),2)}')
+    print(f'Percentage of deviation:            {round(100*(np.abs(wasserstein-closed_form)/closed_form),2)}')
 
     plt.figure(figsize=(30,30))
     sigmas = {0.25, 0.5, 0.75}
