@@ -1,4 +1,5 @@
 
+from configparser import Interpolation
 import enum
 from typing import List
 import numpy as np 
@@ -10,8 +11,8 @@ import scipy.sparse.linalg as lin
 from enum import Enum
 
 class Padding(Enum):
-    EDGE = 0    # Neumann boundary condition (default)
-    CONST = 1   # Dirichlet boundary condition
+    EDGE = 0    # Neumann boundary condition (default) -> no graddient if edge values the same
+    CONST = 1   # Dirichlet boundary condition -> zero padding by default in numoy
 
 def compute_errors(original, images):
     errors = [np.abs(original - image).mean() for image in images]
@@ -57,6 +58,7 @@ def convol(image: np.array, kernel: np.array, padding: Padding = Padding.EDGE):
         pad_img = np.pad(image,(pad_h,pad_w),'edge').astype(np.longdouble)
     elif padding == Padding.CONST:
         pad_img = np.pad(image,(pad_h,pad_w),'constant').astype(np.longdouble)
+    # Default
     else:
         pad_img = np.pad(image,(pad_h,pad_w),'edge').astype(np.longdouble)
 
@@ -74,7 +76,7 @@ def convol(image: np.array, kernel: np.array, padding: Padding = Padding.EDGE):
 # - heat: float             -     heat step (Default: 0.1)
 # - padding: (Padding)      -     padding used (Default: EDGE)
 # Return: (np.array) image
-def heat_diffusion(image:np.array,org_img:np.array, iter:int=100, heat_step:float=0.1, padding: Padding = Padding.EDGE):
+def heat_diffusion(image:np.array,org_img:np.array, iter:int=100, heat_step:float=1e-1, padding: Padding = Padding.EDGE):
 
     # Computation
     out = image.copy().astype(np.float64)
@@ -83,6 +85,13 @@ def heat_diffusion(image:np.array,org_img:np.array, iter:int=100, heat_step:floa
         log.append(out)
         out = out + heat_step*convol(out,laplace_kernel(),padding=padding)
     log.append(out)
+    print(f'Final error: {compute_errors(org_img,log)[iter]}')
+    _, ax = plt.subplots(1,1, figsize=(30,30))
+    ax.imshow(np.clip(out*255.0, 0.0, 255.0).astype(np.uint8), cmap='gray', vmin=0.0, vmax=255.0)
+    ax.set_title("Result")
+    ax.axis('off')
+    plt.tight_layout()
+    plt.show()
     to_image(out).show()
 
     # Statistics
@@ -95,17 +104,26 @@ def heat_diffusion(image:np.array,org_img:np.array, iter:int=100, heat_step:floa
 # - image: (np.array)       -     image to filter
 # - org_image: (np.array)   -     image with no noise
 # - iter: int               -     number of iterations (Default: 32; should be even)
+# - sigma: float            -     sigma for gaussian kernel (Default: 0.5)
 # - padding: (Padding)      -     padding used (Default: EDGE)
 # Return: (np.array) image
-def gaussian_filter(image:np.array,org_img:np.array, iter:int=32, padding=Padding.EDGE):
+def gaussian_filter(image:np.array,org_img:np.array, iter:int=32, sigma: float = 0.5, padding=Padding.EDGE):
     
     # Computation
     out = image.copy().astype(np.float64)
     log = []
     for it in tqdm(np.arange(iter)):
         log.append(out)
-        out = convol(out, gaussian_kernel(), padding=padding)
+        next = convol(out, gaussian_kernel(sigma=sigma), padding=padding)
+        out = next.copy()
     log.append(out)
+    print(f'Final error: {compute_errors(org_img,log)[iter]}')
+    _, ax = plt.subplots(1,1, figsize=(30,30))
+    ax.imshow(np.clip(out*255.0, 0.0, 255.0).astype(np.uint8), cmap='gray', vmin=0.0, vmax=255.0)
+    ax.set_title("Result")
+    ax.axis('off')
+    plt.tight_layout()
+    plt.show()
     to_image(out).show()
 
     # Statistics
@@ -115,15 +133,23 @@ def gaussian_filter(image:np.array,org_img:np.array, iter:int=32, padding=Paddin
 
 # Variational method
 # Inputs:
-# - image: (np.array)   -   image with noise 
-# - lam: (float)        -   lambda to use (default: 2.0)
+# - image: (np.array)       -   image with noise 
+# - org_image: (np.array)   -   image with no noise
+# - lam: (float)            -   lambda to use (default: 2.0)
 # Return: (np.array) image
-def variational_method(img, lam = 2.):
+def variational_method(img,org_image,lam = 2.):
     h,w = img.shape[0],img.shape[1]
     n = h*w
     A = spar.diags([-lam,-lam,(1+4*lam),-lam,-lam,], offsets=[-w,-1,0,1,w], shape=(n,n))
     out = lin.spsolve(A.tocsc().astype(np.float64),img.astype(np.float64).flatten()).reshape(h,w)
+    _, ax = plt.subplots(1,1, figsize=(30,30))
+    ax.imshow(np.clip(out*255.0, 0.0, 255.0).astype(np.uint8), cmap='gray', vmin=0.0, vmax=255.0)
+    ax.set_title("Result")
+    ax.axis('off')
+    plt.tight_layout()
+    plt.show()
     to_image(out).show()
+    print(f'Error: {compute_errors(org_image,[img,out])[1]}')
     del A
     return out
 
@@ -141,7 +167,7 @@ def to_image(img):
 # - title: str - title of graph
 def show_error(org_img,log,title):
     errors = compute_errors(org_img, log)
-    plt.plot(np.arange(len(log)), errors)
+    plt.plot(np.arange(len(log)), errors, marker="o", markersize=1, mfc ="r", mec="r")
     plt.title("Evolution of the errors over the number of "+title)
     plt.xlabel("Number of "+title)
     plt.ylabel("Errors")
@@ -157,7 +183,7 @@ def plot_steps(log:List, step_size:int, title:str=None):
     _, ax = plt.subplots(int(images/2),2, figsize=(30,30))
     ax = ax.flatten()
     for i in range(images):
-        ax[i].imshow(to_image(log[(i+1)*step_size]), cmap='gray')
+        ax[i].imshow(np.clip(log[(i+1)*step_size]*255.0, 0.0, 255.0).astype(np.uint8), cmap='gray', vmin=0.0, vmax=255.0)
         ax[i].axis('off')
         if title is not None:
             ax[i].set_title(title+f" at time {(i+1)*step_size}")
@@ -182,7 +208,7 @@ def main():
 
     gaussian_img = gaussian_filter(I_n,I_orig)
     heat_img = heat_diffusion(I_n,I_orig)
-    var_img = variational_method(I_n)
+    var_img = variational_method(I_n,I_orig)
 
 if __name__ == "__main__":
     main()
