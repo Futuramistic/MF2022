@@ -53,5 +53,5 @@ class SRTrainer():
 
             print(f'Epoch {epoch+1}/{num_epochs} Training Loss: {iteration_loss:.3f} Valid (L1): {val_l1:.3f} Valid (PSNR): {val_PSNR:.3f}  Valid (SSIM): {val_SSIM:.3f}')
             if (epoch%5==0) or (epoch==num_epochs-1):
-                torch.save(self.model.state_dict(),"./model/"+model_name+str(epoch)+"_"+str(self.lr))
+                torch.save(self.model.state_dict(),"../model/"+model_name+str(epoch)+"_"+str(self.lr))
         self.writer.close()
