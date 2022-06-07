@@ -7,7 +7,11 @@ import torchvision
 
 class Tester():
     def __init__(self, model):
-        self.model = model    
+        self.model = model
+
+        # Model needs to be on CPU to output images
+        self.model.to('cpu')    
+
     def test(self,test_dataloader, model_name:str="model"):
 
         test_l1 = 0.
@@ -46,10 +50,9 @@ class Tester():
             bicubic_PSNR   += (-10*torch.log10((nn.MSELoss()(baseline2,high_res))).item())
             bicubic_SSIM   += SSIM(data_range=1.0)(baseline2,high_res).item()
 
-            torchvision.io.write_png(torch.clamp(high_res[0, ...].mul(255),0,255).byte(), "../results/"+model_name+"/test"+str(i)+".png")
             torchvision.io.write_png(torch.clamp(high_res_pred[0, ...].mul(255),0,255).byte(), "../results/"+model_name+"/result"+str(i)+".png")
-            torchvision.io.write_png(torch.clamp(baseline1[0,...].mul(255),0,255).byte(), "../results/"+model_name+"/base_bilin"+str(i)+".png")
-            torchvision.io.write_png(torch.clamp(baseline2[0,...].mul(255),0,255).byte(), "../results/"+model_name+"/base_bicub"+str(i)+".png")
+            torchvision.io.write_png(torch.clamp(baseline1[0,...].mul(255),0,255).byte(), "../results/base/bilinear/result"+str(i)+".png")
+            torchvision.io.write_png(torch.clamp(baseline2[0,...].mul(255),0,255).byte(), "../results/base/bicubic/result"+str(i)+".png")
         test_l1 /= len(test_dataloader)
         test_SSIM /= len(test_dataloader)
         test_PSNR /= len(test_dataloader)
